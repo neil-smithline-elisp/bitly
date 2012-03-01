@@ -1,0 +1,5 @@
+*** Bitly.el
+The elisp file, bitly.el was originally located at [[http://www.emacswiki.org/emacs/bitly.el]] and referenced by this [[http://www.emacswiki.org/emacs/BitLy][emacswiki page]]. After discussions with Vivek, the original author, I am taking over maintenance for the file.
+
+*** Revision History:
+Original version from http://www.emacswiki.org/emacs/bitly.el. <2012-02-29 Wed 19:29>
