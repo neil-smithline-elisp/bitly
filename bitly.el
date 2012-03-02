@@ -1,6 +1,9 @@
 ;;;  bitly.el --- Shorten URLs with bit.ly from emacs
-;;   Also available at https://gist.github.com/716717.
+;; Copyright (C) 2012 Neil Smithline
 ;; Copyright (C) 2010 Vivek Haldar
+;;
+;;   Current version available at https://github.com/Neil-Smithline/bitly.el
+;;   Original version available at https://gist.github.com/716717.
 ;;
 ;;  This program is free software; you can redistribute it and/or modify
 ;;  it under the terms of the GNU General Public License as published by
@@ -18,11 +21,13 @@
 ;;
 ;; Author: Vivek Haldar <vh@vivekhaldar.com>
 ;; Created: 27 November 2010
+;; Maintainer: Neil Smithline
+;;
 ;;
 ;;; Commentary: 
-;; bitly.el allows shortening URLs through the api the bit.ly service
-;; provides. See http://code.google.com/p/bitly-api/ for info about
-;; the tumblr.com api service.
+;; bitly.el allows shortening URLs through the bit.ly api service. See
+;; http://code.google.com/p/bitly-api/ for info about the tumblr.com
+;; api service.
 ;;
 ;; Installation:
 ;; You will need to register with bit.ly and get an API key. Customize
@@ -35,6 +40,9 @@
 ;;     point.
 
 (require 'url)
+
+(eval-when (compile)
+  (require 'cl))
 
 (defcustom bitly-username nil
   "Bitly username."
@@ -52,33 +60,67 @@
 
 (defvar bitly-api-url "http://api.bit.ly/v3/")
 
-(defun bitly-shorten ()
+(defun bitly-get-me-an-url (prompt)
+  "Get an URL. Duh!"
+  (let ((the-url)
+        (begin)
+        (end))
+    (when (region-active-p)
+      (setq the-url (buffer-substring (region-beginning) (region-end))
+            begin   (region-beginning)
+            end     (region-end)))
+    (unless the-url
+      (setq the-url (thing-at-point 'url))
+      (when the-url
+        (setq begin   (beginning-of-thing 'url)
+              end     (end-of-thing 'url))))
+    (unless the-url
+      (setq the-url (read-from-minibuffer prompt)
+            begin   (point)
+            end     (point)))
+    (list the-url begin end)))
+        
+(defun bitly-shorten (url &optional begin end)
   "Shorten a full URL using Bitly, and insert at point."
-  (interactive)
-  (setq longurl (read-from-minibuffer "URL:"))
-  (let* ((apicall 
-	  (concat bitly-api-url
-		  (format "shorten?login=%s&apiKey=%s&longUrl=%s&format=txt"
-			  bitly-username bitly-api-key longurl)))
-	 (resultbuffer (url-retrieve-synchronously apicall)))
-    (message "bitly url = %s" apicall)
-    (bitly-strip-http-headers resultbuffer)
-    (insert-buffer-substring resultbuffer)
-    ))
+  (interactive (bitly-get-me-an-url "URL to shorten: "))
+  (let* ((api-url (concat bitly-api-url
+                          (format
+                           "shorten?login=%s&apiKey=%s&longUrl=%s&format=txt"
+                           bitly-username bitly-api-key url)))
+         (start-marker (copy-marker (or begin (point))))
+         (end-marker   (copy-marker (or end (point))))
+         (output-buffer))
+    ;;(setq output-buffer (url-retrieve-synchronously api-url))
+    ;;(bitly-process-response output-buffer nil (list start-marker end-marker))))
+    (url-retrieve api-url #'bitly-process-response (list start-marker end-marker))))
 
+(defun bitly-process-response (status start-marker end-marker)
+  "Process the Bitly response in the current buffer, with STATUS and REGION.
+The shortened URL will be inserted into REGION, a pair of markers."
+  (message "Status=%s." status)
+  (message "region=(%s, %s)." start-marker end-marker)
+    (let ((short-url        (bitly-strip-http-headers (current-buffer)))
+          (start-marker     start-marker)
+          (end-marker       end-marker))
+      (message "Bitly returned url: `%s'." short-url)
+      (when (eq :error (car status))
+        (signal (cadr status) (caddr status)))
+      (save-excursion
+        (set-buffer (marker-buffer start-marker))
+        (delete-region start-marker end-marker)
+        (insert short-url))))
 
-(defun bitly-strip-http-headers (httpbuffer)
-  "Strip headers from HTTP reply."
+(defun bitly-strip-http-headers (response-buffer)
+  "Destructively strip headers from RESPONSE-BUFFER and return the body."
   (save-excursion 
-    (set-buffer httpbuffer)
-    (goto-char (point-min))
-    (let ((endpt (search-forward "
+    (set-buffer response-buffer)
+    (goto-char (point-max))
+    ;; Delete terminating newline
+    (backward-delete-char 1)
+    ;; Delete header and such.
+    (beginning-of-line 1)
+    (delete-region (point-min) (point))
+    (buffer-substring (point-min) (point-max))))
 
-")))
-      (delete-region (point-min) endpt)
-      ; we're still left with an extra newline
-      (goto-char (point-max))
-      (delete-backward-char 1)
-      (insert-string " "))))
 
 (provide 'bitly)
