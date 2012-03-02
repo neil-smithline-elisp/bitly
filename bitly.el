@@ -2,8 +2,12 @@
 ;; Copyright (C) 2012 Neil Smithline
 ;; Copyright (C) 2010 Vivek Haldar
 ;;
-;;   Current version available at https://github.com/Neil-Smithline/bitly.el
-;;   Original version available at https://gist.github.com/716717.
+;;   Current version available at:
+;;        https://github.com/Neil-Smithline/bitly.el
+;;        (or http://bit.ly/wSSiWH)
+;;   Original version available at 
+;;       https://gist.github.com/716717
+;;       (or http://bit.ly/wiMWlR)
 ;;
 ;;  This program is free software; you can redistribute it and/or modify
 ;;  it under the terms of the GNU General Public License as published by
@@ -26,8 +30,7 @@
 ;;
 ;;; Commentary: 
 ;; bitly.el allows shortening URLs through the bit.ly api service. See
-;; http://code.google.com/p/bitly-api/ for info about the tumblr.com
-;; api service.
+;; http://bit.ly/wmT2Sf for info about the bit.ly api service.
 ;;
 ;; Installation:
 ;; You will need to register with bit.ly and get an API key. Customize
