@@ -5,7 +5,7 @@
 ;;   Current version available at:
 ;;        https://github.com/Neil-Smithline/bitly.el
 ;;        (or http://bit.ly/wSSiWH)
-;;   Original version available at 
+;;   Original version available at
 ;;       https://gist.github.com/716717
 ;;       (or http://bit.ly/wiMWlR)
 ;;
@@ -26,7 +26,6 @@
 ;; Author: Vivek Haldar <vh@vivekhaldar.com>
 ;; Created: 27 November 2010
 ;; Maintainer: Neil Smithline
-;;
 ;;
 ;;; Commentary: 
 ;; bitly.el allows shortening URLs through the bit.ly api service. See
@@ -93,8 +92,6 @@
          (start-marker (copy-marker (or begin (point))))
          (end-marker   (copy-marker (or end (point))))
          (output-buffer))
-    ;;(setq output-buffer (url-retrieve-synchronously api-url))
-    ;;(bitly-process-response output-buffer nil (list start-marker end-marker))))
     (url-retrieve api-url #'bitly-process-response (list start-marker end-marker))))
 
 (defun bitly-process-response (status start-marker end-marker)
@@ -110,12 +107,15 @@ The shortened URL will be inserted into REGION, a pair of markers."
         (signal (cadr status) (caddr status)))
       (save-excursion
         (set-buffer (marker-buffer start-marker))
-        (delete-region start-marker end-marker)
-        (insert short-url))))
+        (let ((location (point)))
+          (goto-char start-marker)
+          (delete-region start-marker end-marker)
+          (insert short-url)
+          (goto-char location)))))
 
 (defun bitly-strip-http-headers (response-buffer)
   "Destructively strip headers from RESPONSE-BUFFER and return the body."
-  (save-excursion 
+  (save-excursion
     (set-buffer response-buffer)
     (goto-char (point-max))
     ;; Delete terminating newline
@@ -124,6 +124,5 @@ The shortened URL will be inserted into REGION, a pair of markers."
     (beginning-of-line 1)
     (delete-region (point-min) (point))
     (buffer-substring (point-min) (point-max))))
-
 
 (provide 'bitly)

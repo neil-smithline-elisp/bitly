@@ -1,5 +1,17 @@
-*** Bitly.el
-The elisp file, bitly.el was originally located at [[http://www.emacswiki.org/emacs/bitly.el]] and referenced by this [[http://www.emacswiki.org/emacs/BitLy][emacswiki page]]. After discussions with Vivek, the original author, I am taking over maintenance for the file.
+*** Overview
+Shortens URLs via the [[http://bitly.com][bitly.com]] [[http://bit.ly/wQXvkn][API]] (see [[http://bit.ly/wmT2Sf][details]]). If a region is active, `bitly-shorten' will replace the region with the shortened URL. When there is no active region but `thing-at-point' finds an URL at the current point, that URL will shortened in place. If there is neither an active region nor an url at the current point, the user will be prompted for an URL that will be shortened and inserted at point.
 
-*** Revision History:
-- Original version from http://www.emacswiki.org/emacs/bitly.el. <2012-02-29 Wed 19:29>
+** Usage
+Typically, `bitly-shorten' will ask bitly.com to shorten the URL, insert the shortened URL and return. But if the call to bitly.com takes too long, `bitly-shorten' will return and allow you to continue using Emacs. When the shortened URL is returned from bitly.com, it will be inserted at the correct location.
+
+If you bind `bitly-shorten' to a keybinding or mouse-binding, you can rapidly replace URLs in a buffer without needing to wait for each URL to be shortened.
+
+In the event that there is an error obtaining the shortened URL, the buffer will be left unmodified and you will receive an error.
+
+** History
+The elisp file, bitly.el was originally located at http://www.emacswiki.org/emacs/bitly.el (or http://bit.ly/xV9oK5) and referenced by this [[http://www.emacswiki.org/emacs/BitLy][emacswiki page]]. After discussions with Vivek, the original author, I am taking over maintenance for the file.
+
+- <2012-03-03 Sat 18:57> Updated to support asynchronous calling of bitly and default URL from the region or `thing-at-point' if there is no active region. 
+-  <2012-02-29 Wed 19:29> Original version from http://www.emacswiki.org/emacs/bitly.el.
+
+# LocalWords:  bitly
