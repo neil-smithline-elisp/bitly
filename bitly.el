@@ -38,12 +38,12 @@
 ;; Description:
 ;; Interactive functions:
 ;; bitly-shorten
-;;     Shorten a URL (prompted for in the minibuffer) and insert at
+;;     Shorten an URL (prompted for in the minibuffer) and insert at
 ;;     point.
 
 (require 'url)
 
-(eval-when (compile)
+(eval-when-compile
   (require 'cl))
 
 (defcustom bitly-username nil
@@ -60,10 +60,20 @@
           (string :tag "bitly_api_key"))
   :group 'bitly)
 
-(defvar bitly-api-url "http://api.bit.ly/v3/")
+(defcustom bitly-shorten-asynchronously t
+  "Whether `bitly-shorten' should run asynchronously or not.
+Unless you are having probems with `bitly-shorten', there is
+probably no need to change this.
+
+If you are calling `bitly-shorten' programmatically, you can set
+this to a specific value in a `let' statement."
+  :type 'boolean
+  :group 'bitly)
+
+(defconst bitly-api-url "http://api.bit.ly/v3/")
 
 (defun bitly-get-me-an-url (prompt)
-  "Get an URL. Duh!"
+  "Get an URL, prompting the user if needed.."
   (let ((the-url)
         (begin)
         (end))
@@ -81,42 +91,50 @@
             begin   (point)
             end     (point)))
     (list the-url begin end)))
-        
+
 (defun bitly-shorten (url &optional begin end)
-  "Shorten a full URL using Bitly, and insert at point."
-  (interactive (bitly-get-me-an-url "URL to shorten: "))
+  "Shorten a full URL using Bitly, and insert at point.
+Optional BEGIN and END specify a region to get the URL from and
+replace it.
+
+Call Bitly asynchronously if `bitly-shorten-asynchronously'."
+  (interactive (bitly-get-me-an-url "URL to shorten wth Bitly: "))
+  (assert (and bitly-api-key bitly-username))
   (let* ((api-url (concat bitly-api-url
                           (format
                            "shorten?login=%s&apiKey=%s&longUrl=%s&format=txt"
-                           bitly-username bitly-api-key url)))
-         (start-marker (copy-marker (or begin (point))))
-         (end-marker   (copy-marker (or end (point))))
-         (output-buffer))
-    (url-retrieve api-url #'bitly-process-response (list start-marker end-marker))))
+                           bitly-username
+                           bitly-api-key
+                           (url-hexify-string url))))
+         (start-marker (copy-marker (or begin (point-marker))))
+         (end-marker   (copy-marker (or end (point-marker)))))
+    (if bitly-shorten-asynchronously
+        (url-retrieve api-url
+                      #'bitly-process-response
+                      (list start-marker end-marker))
+      (let ((buf (url-retrieve-synchronously api-url)))
+        (with-current-buffer buf
+          (bitly-process-response nil start-marker end-marker))))))
 
 (defun bitly-process-response (status start-marker end-marker)
   "Process the Bitly response in the current buffer, with STATUS and REGION.
 The shortened URL will be inserted into REGION, a pair of markers."
-  (message "Status=%s." status)
-  (message "region=(%s, %s)." start-marker end-marker)
-    (let ((short-url        (bitly-strip-http-headers (current-buffer)))
-          (start-marker     start-marker)
-          (end-marker       end-marker))
-      (message "Bitly returned url: `%s'." short-url)
-      (when (eq :error (car status))
-        (signal (cadr status) (caddr status)))
-      (save-excursion
-        (set-buffer (marker-buffer start-marker))
-        (let ((location (point)))
-          (goto-char start-marker)
-          (delete-region start-marker end-marker)
-          (insert short-url)
-          (goto-char location)))))
+  (when (eq :error (car status))
+    (signal (cadr status) (caddr status)))
+  (let ((short-url        (bitly-strip-http-headers (current-buffer))))
+    (with-current-buffer (marker-buffer start-marker)
+      ;; Save point in an `after' marker per `marker-insertion-type'.
+      ;; If point is in the URL this will move point to the end of the
+      ;; URL. Otherwise, point stays where it is.
+      (let ((orig-point (copy-marker (point-marker) t)))
+        (goto-char start-marker)
+        (delete-region start-marker end-marker)
+        (insert short-url)
+        (goto-char orig-point)))))
 
 (defun bitly-strip-http-headers (response-buffer)
   "Destructively strip headers from RESPONSE-BUFFER and return the body."
-  (save-excursion
-    (set-buffer response-buffer)
+  (with-current-buffer response-buffer
     (goto-char (point-max))
     ;; Delete terminating newline
     (backward-delete-char 1)
