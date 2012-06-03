@@ -9,7 +9,7 @@ If you bind `bitly-shorten' to a keybinding or mouse-binding, you can rapidly re
 In the event that there is an error obtaining the shortened URL, the buffer will be left unmodified and you will receive an error.
 
 ** History
-The elisp file, bitly.el was originally located at http://www.emacswiki.org/emacs/bitly.el (or http://bit.ly/xV9oK5) and referenced by this [[http://www.emacswiki.org/emacs/BitLy][emacswiki page]]. After discussions with Vivek, the original author, I am taking over maintenance for the file.
+The elisp file, =bitly.el= was originally located at http://www.emacswiki.org/emacs/bitly.el (or http://bit.ly/xV9oK5) and document at this [[http://www.emacswiki.org/emacs/BitLy][emacswiki page]]. After discussions with Vivek, the original author, I am taking over maintenance for the file.
 
 - <2012-05-24 Thu 18:02> Added URL escaping so URLs with funky characters work.
 - <2012-03-03 Sat 18:57> Updated to support asynchronous calling of bitly and default URL from the region or `thing-at-point' if there is no active region. 
